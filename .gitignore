@@ -1,0 +1,22 @@
+# Python Sanal Ortamı
+.venv/
+venv/
+
+# Python önbellek dosyaları
+__pycache__/
+*.pyc
+*.pyo
+
+# pyCharm kişisel proje ayarları
+.idea/
+
+# Gizli bilgiler ve yerel ayarlar
+.env
+.env.*
+
+# Analiz için kullanılan dosyalar
+scan_samples/
+
+# İşletim sistemi dosyaları
+.DS_Store
+Thumbs.db

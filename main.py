@@ -1,0 +1,1 @@
+print("Dosya Risk Analizörü başlatıldı.")
