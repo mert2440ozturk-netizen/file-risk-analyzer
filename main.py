@@ -1,64 +1,29 @@
-import tkinter as tk # Arayüz oluşturmak için Tkinter’ı yükler; kısaca tk adıyla kullanırız.
+import sys
 
-from tkinter import filedialog
-from pathlib import Path
+from PySide6.QtWidgets import QApplication, QWidget
 
-def select_file():
-    file_path = filedialog.askopenfilename(
-        title="incelenecek dosyayı seç",
-        parent=window,
-    )
 
-    if not file_path:
-        return
+class FileRiskAnalyzer(QWidget):
+    def __init__(self):
+        super().__init__()
 
-    file_name = Path(file_path).name
-    selected_file_label.config(text=f"Seçilen dosya: {file_name}")
+        self.setWindowTitle("File Risk Analyzer")
+        self.resize(900,600)
+        self.setMinimumSize(700,450)
 
-window = tk.Tk() # Ana pencereyi oluşturur.
-window.title("Dosya risk analizörü")
-window.geometry("800x500")  # Başlangıç genişliğini ve yüksekliğini piksel olarak belirler.
-window.minsize(600,400) # Pencerenin küçültülebileceği en küçük boyutu belirler.
-window.configure(bg="#111827")
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #111827;
+                color: #F9FAFB;
+                font-family: "Segoe UI";
+                font-size: 14px;
+            }
+        """)
 
-title_label = tk.Label(
-    window,
-    text="Dosya risk analizörü",
-    font=("Segoe UI", 24, "bold"),
-    bg="#111827",
-    fg="#F9FAFB"
-)
-title_label.pack(pady=(60,15))
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-description_label = tk.Label(
-    window,
-    text="Dosyaları incele, risk işaretlerini öğren.",
-    font=("Segoe UI", 12),
-    bg="#111827",
-    fg="#9CA3AF",
-)
-description_label.pack()
+    window = FileRiskAnalyzer()
+    window.show()
 
-select_button = tk.Button(
-    window,
-    text="dosya seç",
-    command= select_file,
-    bg="#2563EB",
-    fg="#FFFFFF",
-    padx=24,
-    pady=12,
-    cursor="hand2",
-)
-select_button.pack(pady=(35,20))
-
-selected_file_label = tk.Label(
-    window,
-    text="henüz dosya seçilmedi",
-    font=("Segoe UI", 12, "bold"),
-    bg="#2563EB",
-    fg="#FFFFFF",
-    wraplength=550,
-)
-selected_file_label.pack(padx=20)
-
-window.mainloop()
+    sys.exit(app.exec_())
