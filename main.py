@@ -1,6 +1,7 @@
 import sys
 
-from PySide6.QtCore import QThread, Signal, Slot
+from pathlib import Path
+from PySide6.QtCore import QThread, Signal, Slot, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -13,6 +14,94 @@ from PySide6.QtWidgets import (
 
 from analyzer import analyze_file
 
+class DropArea(QLabel):
+    file_dropped = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setAcceptDrops(True)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setMinimumHeight(130)
+        self.setWordWrap(True)
+        self.set_busy(False)
+
+    def set_busy(self, busy):
+        self.busy = busy
+        self.setAcceptDrops(not busy)
+
+        if busy:
+            self.setText("Analysis in progress...")
+        else:
+            self.setText(
+                "Drop one file here\n"
+                "or use the button below"
+            )
+
+        self.update_appearance()
+
+    def update_appearance(self, highlighted=False):
+        border_color = "#60A5FA" if highlighted else "#475569"
+        background = "#172554" if highlighted else "#1F2937"
+
+        self.setStyleSheet(f"""
+            QLabel {{
+                background-color: {background};
+                color: #CBD5E1;
+                border: 2px dashed {border_color};
+                border-radius: 12px;
+                padding: 20px;
+                font-size: 16px;
+            }}
+        """)
+
+    def get_file_path(self, event):
+        if self.busy or not event.mimeData().hasUrls():
+            return None
+
+        urls = event.mimeData().urls()
+
+        if len(urls) != 1 or not urls[0].isLocalFile():
+            return None
+
+        file_path = urls[0].toLocalFile()
+
+        try:
+            if Path(file_path).is_file():
+                return file_path
+        except OSError:
+            pass
+
+        return None
+
+    def dragEnterEvent(self, event):
+        file_path = self.get_file_path(event)
+
+        if file_path and (
+            event.possibleActions() & Qt.DropAction.CopyAction
+        ):
+            event.setDropAction(Qt.DropAction.CopyAction)
+            event.accept()
+            self.update_appearance(highlighted=True)
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        self.update_appearance()
+        event.accept()
+
+    def dropEvent(self, event):
+        file_path = self.get_file_path(event)
+        self.update_appearance()
+
+        if file_path and (
+            event.possibleActions() & Qt.DropAction.CopyAction
+        ):
+            event.setDropAction(Qt.DropAction.CopyAction)
+            event.accept()
+            self.file_dropped.emit(file_path)
+        else:
+            event.ignore()
 
 class AnalysisWorker(QThread):
     result_ready = Signal(dict)
@@ -91,6 +180,9 @@ class FileRiskAnalyzer(QWidget):
         )
         description.setWordWrap(True)
 
+        self.drop_area = DropArea()
+        self.drop_area.file_dropped.connect(self.start_analysis)
+
         self.select_button = QPushButton("Select file and analyze")
         self.select_button.clicked.connect(self.select_file)
 
@@ -104,6 +196,7 @@ class FileRiskAnalyzer(QWidget):
 
         layout.addWidget(title)
         layout.addWidget(description)
+        layout.addWidget(self.drop_area)
         layout.addWidget(self.select_button)
         layout.addWidget(self.status_label)
         layout.addWidget(self.result_box, 1)
@@ -118,8 +211,16 @@ class FileRiskAnalyzer(QWidget):
         if not file_path:
             return
 
+        self.start_analysis(file_path)
+
+    @Slot(str)
+    def start_analysis(self, file_path):
+        if self.worker is not None:
+            return
+
         self.result_box.clear()
         self.select_button.setEnabled(False)
+        self.drop_area.set_busy(True)
         self.status_label.setText("Analyzing...")
 
         self.worker = AnalysisWorker(file_path, self)
@@ -179,6 +280,7 @@ class FileRiskAnalyzer(QWidget):
         self.worker.deleteLater()
         self.worker = None
         self.select_button.setEnabled(True)
+        self.drop_area.set_busy(False)
 
     def closeEvent(self, event):
         if self.worker is not None:
@@ -188,7 +290,6 @@ class FileRiskAnalyzer(QWidget):
             event.ignore()
         else:
             event.accept()
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
