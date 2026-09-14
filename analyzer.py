@@ -1,3 +1,4 @@
+from enum import nonmember
 from pathlib import Path
 import hashlib
 
@@ -98,6 +99,23 @@ def calculate_sha256(file_path):
     #Hesaplanan özeti onaltılık metin olarak döndürür.
     return sha256.hexdigest()
 
+def calculate_risk_score(findings):
+    severity_scores = {
+        "low": 2,
+        "medium": 3,
+        "high": 4,
+        "critical": 5,
+    }
+
+    score = 1
+
+    for finding in findings:
+        severity = finding["severity"]
+        finding_score = severity_scores[severity]
+        score = max(score, finding_score)
+
+    return score
+
 def analyze_file(file_analyzer):
     path = Path(file_analyzer)
 
@@ -112,6 +130,15 @@ def analyze_file(file_analyzer):
     findings = check_file_name(path.name)
     findings.extend(check_extension_match(extension, detected_type))
 
+    risk_score = calculate_risk_score(findings)
+    assessment_status = "basic_checks_only"
+
+    if detected_type in {"unknown", "empty", "zip_container"}:
+        assessment_status = "limited"
+
+        if not findings:
+            risk_score = None
+
     return {
         "name": path.name,
         "extension": extension,
@@ -119,6 +146,8 @@ def analyze_file(file_analyzer):
         "detected_type": detected_type,
         "sha256": file_hash,
         "findings": findings,
+        "assessment_status": assessment_status,
+        "risk_score": risk_score,
     }
 
 if __name__ == "__main__":
