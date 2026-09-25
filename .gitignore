@@ -20,3 +20,6 @@ scan_samples/
 # İşletim sistemi dosyaları
 .DS_Store
 Thumbs.db
+
+# Test önbelleği
+.pytest_cache/

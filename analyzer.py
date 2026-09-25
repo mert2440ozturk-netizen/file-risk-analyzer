@@ -1,4 +1,3 @@
-from enum import nonmember
 from pathlib import Path
 import hashlib
 
