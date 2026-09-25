@@ -115,8 +115,8 @@ def calculate_risk_score(findings):
 
     return score
 
-def analyze_file(file_analyzer):
-    path = Path(file_analyzer)
+def analyze_file(file_path):
+    path = Path(file_path)
 
     if not path.is_file():
         raise ValueError("The selected path is not an existing file.")
